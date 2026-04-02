@@ -1,3 +1,18 @@
+"""PDU OID 目录模块。
+
+这个文件的核心目标是把 Excel 中的 OID 说明沉淀成结构化 Python 数据，
+让代码在不依赖外部表格的情况下也能：
+- 查询完整 OID
+- 搜索 OID 含义
+- 解析带 `~N` 的分路/分插口节点
+
+维护建议：
+1. 新增 OID 时，优先往 `OID_CATALOG` 里补记录
+2. `key` 字段尽量保持稳定，因为其他模块会按它引用
+3. 如果 Excel 原始行名称为空或不适合当键名，可以人工起一个语义明确的 `key`
+4. 如果同一个 OID 存在多种备注写法，也可以保留多个条目，但 `key` 不能冲突
+"""
+
 OID_CATALOG = [
     {
         "key": "deviceStatusVersion",
@@ -536,12 +551,31 @@ OID_LOOKUP = {entry["key"]: entry for entry in OID_CATALOG}
 
 
 def clean_oid_value(raw_oid):
+    """清洗 Excel 原始 OID 字符串。
+
+    处理内容：
+    - 去掉开头可能存在的点号 `.`
+    - 去掉同一单元格里附带的中文说明
+
+    例如：
+    `.1.3.6.1.4.1... 第二种控制方式` -> `1.3.6.1.4.1...`
+    """
     if not raw_oid:
         return ""
     return raw_oid.split()[0].lstrip(".")
 
 
 def resolve_oid(key, index=None):
+    """根据目录键名解析出最终可访问的 OID。
+
+    Excel 中很多分路节点使用 `~N` 表示“最后一段是可变索引”。
+    例如：
+    - `1.3.6.1.4.1.23280.8.1.3.1~N`
+    - 当 index=1 时，解析成插口 1 的 OID
+    - 当 index=8 时，解析成插口 8 的 OID
+
+    这里之所以把解析逻辑集中在目录模块，是为了避免上层业务代码重复拼接 OID。
+    """
     entry = OID_LOOKUP[key]
     oid = clean_oid_value(entry["oid"])
     if oid.endswith("~N"):
@@ -555,10 +589,23 @@ def resolve_oid(key, index=None):
 
 
 def get_oid_entry(key):
+    """按键名获取单条 OID 目录记录。"""
     return OID_LOOKUP[key]
 
 
 def search_oid_entries(keyword):
+    """按关键字搜索 OID 目录。
+
+    搜索范围包括：
+    - key
+    - 原始名称
+    - OID 字符串
+    - 含义
+    - 备注
+
+    这个函数主要服务于 `pdu_snmp_cli.py oid list --keyword ...`
+    命令，便于维护者和其他 AI 快速定位相关节点。
+    """
     if not keyword:
         return OID_CATALOG
 
