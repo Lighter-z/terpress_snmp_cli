@@ -21,10 +21,22 @@
 - 调用 `pdusnmp.py`
 - 查询单个插口或全部插口信息
 - 控制单个插口开启或关闭
+- 查询内置 OID 目录
+
+### `pdu_oid_catalog.py`
+
+根据 `PDU的OID节点一览表v0.6.xlsx` 整理出的完整 OID 目录，包含：
+
+- OID 键名
+- OID 节点
+- 数据类型
+- 读写属性
+- 含义
+- 备注
 
 ## 文件关系
 
-`demo.py` 调用 `pdusnmp.py`，`pdusnmp.py` 再通过 `pysnmp` 与 PDU 设备通信。
+`demo.py` 调用 `pdusnmp.py` 进行设备通信，同时调用 `pdu_oid_catalog.py` 提供完整 OID 目录查询能力。
 
 ## 依赖安装
 
@@ -39,7 +51,7 @@ pip install -r requirements.txt
 
 ## 默认配置
 
-在 `demo.py`顶部修改默认设备地址：
+在 `demo.py` 顶部修改默认设备地址：
 
 ```python
 DEVICE_IP = '192.168.0.166'
@@ -63,6 +75,18 @@ python demo.py -h
 
 ```bash
 python demo.py device-name
+```
+
+或者：
+
+```bash
+python demo.py device name
+```
+
+读取设备实时数据：
+
+```bash
+python demo.py device realtime
 ```
 
 读取 1 号插口完整信息：
@@ -107,6 +131,18 @@ python demo.py outlet on --sock 1
 python demo.py outlet off --sock 1
 ```
 
+按关键字搜索 OID：
+
+```bash
+python demo.py oid list --keyword 电流
+```
+
+查看某个 OID 的详细说明：
+
+```bash
+python demo.py oid show --key outletControlCommand
+```
+
 在 Ubuntu 下执行时，把上面的 `python` 换成 `python3` 即可。
 
 ## 当前支持的插口信息
@@ -115,22 +151,51 @@ python demo.py outlet off --sock 1
 - 电压
 - 电流
 
-如果你的设备支持插口名称或电能，并且已经确认对应 OID，可以在 `demo.py` 顶部的 `OID_TEMPLATES` 中补充：
+设备实时数据命令当前会读取这些指标：
+
+- 电压
+- 电流
+- 有功功率
+- 有功电能量
+- 功率因数
+- 频率
+- 碳排放量
+
+如果你的设备支持插口名称，并且你已经确认对应 OID，可以在 `demo.py` 的 `OID_KEYS` 里补充：
 
 - `outlet_name`
-- `outlet_energy`
 
 ## OID 说明
 
-请根据设备的 MIB/OID 定义确认以下配置：
+完整 OID 已经整理进代码，不需要再单独翻 Excel。可以直接使用：
 
-- `1.3.6.1.4.1.23280.2.1.3.1`：设备名称
-- `1.3.6.1.4.1.23280.8.1.2.x`：插口状态
-- `1.3.6.1.4.1.23280.8.1.3.x`：插口电压
-- `1.3.6.1.4.1.23280.8.1.4.x`：插口电流
-- `1.3.6.1.4.1.23280.9.1.2.x`：插口开关控制
+```bash
+python demo.py oid list
+```
 
-其中 `x` 表示插口编号。
+或按关键字搜索：
+
+```bash
+python demo.py oid list --keyword 温度
+```
+
+当前插口控制和查询默认使用这些 OID：
+
+- `deviceStatusModelNumber`：设备型号
+- `phaseStatusVoltage`：设备电压
+- `phaseStatusCurrent`：设备电流
+- `deviceStatusActivePower`：总有功功率
+- `deviceStatusPowerFactor`：总功率因数
+- `deviceStatusActiveEnergy`：总有功电能量
+- `deviceStatusFrequency`：频率
+- `deviceStatusCarbonEmission`：碳排放量
+- `outletStatusState`：插口状态
+- `outletStatusVoltage`：插口电压
+- `outletStatusCurrent`：插口电流
+- `outletStatusActiveEnergy`：插口电能
+- `outletControlCommand`：插口开关控制
+
+如果设备对某些分插口测量项不支持，设备会返回 `-1`。命令行会显示为 `不支持`，而不是负数。
 
 ## 开关状态值说明
 
@@ -158,4 +223,4 @@ python demo.py outlet off --sock 1
 - 社区字符串写死为 `public` 和 `private`
 - 默认设备 IP 写在代码里，但可以通过 `--ip` 临时覆盖
 - 全部插口信息查询是串行执行
-- 插口名称和电能的 OID 默认未配置
+- 插口名称的 OID 默认未配置
