@@ -3,6 +3,9 @@
 import asyncio
 from pysnmp.hlapi.asyncio import *
 
+CONTROL_ON_VALUE = 1
+CONTROL_OFF_VALUE = 2
+
 
 # 定义 SNMP 引擎
 class MySnmpEngine:
@@ -194,8 +197,8 @@ class MySnmpEngine:
             print('无效的插口号')
             return None
         if on_off:
-            state = 1
+            state = CONTROL_ON_VALUE
         else:
-            state = 2
+            state = CONTROL_OFF_VALUE
         return asyncio.run(self.set_value(state))
 

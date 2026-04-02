@@ -1,112 +1,161 @@
-# Python 3.13 PDU SNMP 示例说明
+# Python 3.13 PDU SNMP 命令行工具
 
-这个目录是一个通过 SNMP 协议读取和控制 PDU 设备的最小示例，适合用来做联调、二次开发或快速验证设备 OID。
+这个目录提供了一个通过 SNMP 协议读取和控制 PDU 插口的命令行工具，适合在 Windows 或 Ubuntu 终端里直接查询插口信息、控制单个插口开关。
 
 ## 文件作用
 
 ### `pdusnmp.py`
 
-这是底层封装文件，定义了 `MySnmpEngine` 类，负责：
+底层 SNMP 封装，负责：
 
 - 校验设备 IP 地址和插口号
-- 通过 `pysnmp` 发起 SNMP `GET` 请求读取 OID 值
-- 通过 `pysnmp` 发起 SNMP `SET` 请求写入 OID 值
-- 对常见业务能力做了简单封装，例如：
-  - 读取设备名称
-  - 读取总电压、总电流、总功率、总电能
-  - 读取插口状态、电压、电流、电能、插口名称
-  - 控制插口开关
+- 发送 SNMP `GET` 和 `SET` 请求
+- 提供设备名称、插口状态、电压、电流等读取方法
+- 提供插口开关控制方法
 
 ### `demo.py`
 
-这是演示脚本，展示如何调用 `pdusnmp.py` 中的 `MySnmpEngine`：
+命令行入口，负责：
 
-- `get_device_name()`：读取设备型号
-- `get_relay_voltage()`：遍历读取 1 到 8 号插口电压
-- `set_relay_state()`：读取每个插口当前状态，并执行一次开关切换
+- 解析命令参数
+- 调用 `pdusnmp.py`
+- 查询单个插口或全部插口信息
+- 控制单个插口开启或关闭
 
-## 两个文件的关系
+## 文件关系
 
-`demo.py` 依赖 `pdusnmp.py`。
-
-调用关系是：
-
-1. `demo.py` 创建 `pdusnmp.MySnmpEngine()` 实例
-2. 设置 `dev_ip`、`oid`、`n_sock` 等参数
-3. 调用 `MySnmpEngine` 里封装好的方法
-4. `pdusnmp.py` 再通过 `pysnmp` 与目标 PDU 设备通信
-
-可以把它们理解成：
-
-- `pdusnmp.py`：库文件 / 通信层
-- `demo.py`：示例文件 / 调用层
+`demo.py` 调用 `pdusnmp.py`，`pdusnmp.py` 再通过 `pysnmp` 与 PDU 设备通信。
 
 ## 依赖安装
-
-本项目当前直接依赖：
-
-- `pysnmp`
-
-安装命令：
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 运行方式
+如果你的系统里有多个 Python 版本：
 
-安装依赖后执行：
+- Windows 可以用 `py -3.13`
+- Ubuntu 可以用 `python3`
 
-```bash
-python demo.py
+## 默认配置
+
+在 `demo.py`顶部修改默认设备地址：
+
+```python
+DEVICE_IP = '192.168.0.166'
 ```
 
-如果你的环境里有多个 Python 版本，可以把上面的 `python` 换成 `py -3.13`。
+也可以执行时临时指定：
 
-## 运行前需要修改的内容
+```bash
+python demo.py --ip 192.168.0.166 device-name
+```
 
-设备IP地址
+## 常用命令
 
-- `DEVICE_IP = '192.168.3.11'`
+查看帮助：
 
-如果你的设备地址不同，只需要修改这一处：
+```bash
+python demo.py -h
+```
 
-- `DEVICE_IP`
+读取设备型号：
 
-同时请根据你的设备 MIB/OID 定义，确认这些 OID 是否正确：
+```bash
+python demo.py device-name
+```
+
+读取 1 号插口完整信息：
+
+```bash
+python demo.py outlet info --sock 1
+```
+
+读取全部插口简要信息：
+
+```bash
+python demo.py outlet list
+```
+
+读取单个插口状态：
+
+```bash
+python demo.py outlet status --sock 1
+```
+
+读取单个插口电压：
+
+```bash
+python demo.py outlet voltage --sock 1
+```
+
+读取单个插口电流：
+
+```bash
+python demo.py outlet current --sock 1
+```
+
+打开 1 号插口：
+
+```bash
+python demo.py outlet on --sock 1
+```
+
+关闭 1 号插口：
+
+```bash
+python demo.py outlet off --sock 1
+```
+
+在 Ubuntu 下执行时，把上面的 `python` 换成 `python3` 即可。
+
+## 当前支持的插口信息
+
+- 状态
+- 电压
+- 电流
+
+如果你的设备支持插口名称或电能，并且已经确认对应 OID，可以在 `demo.py` 顶部的 `OID_TEMPLATES` 中补充：
+
+- `outlet_name`
+- `outlet_energy`
+
+## OID 说明
+
+请根据设备的 MIB/OID 定义确认以下配置：
 
 - `1.3.6.1.4.1.23280.2.1.3.1`：设备名称
-- `1.3.6.1.4.1.23280.8.1.3.x`：插口电压
 - `1.3.6.1.4.1.23280.8.1.2.x`：插口状态
+- `1.3.6.1.4.1.23280.8.1.3.x`：插口电压
+- `1.3.6.1.4.1.23280.8.1.4.x`：插口电流
 - `1.3.6.1.4.1.23280.9.1.2.x`：插口开关控制
 
 其中 `x` 表示插口编号。
 
 ## 开关状态值说明
 
-在当前代码约定里，插口开关控制使用整数状态值：
+这个设备的“控制写入值”和“状态返回值”不是同一套定义。
+
+控制写入值：
 
 - `1`：开启
 - `2`：关闭
 
-对应代码可参考 `turn_on_off()` 实现。
+命令行里：
 
-## 编码说明
+- `outlet on --sock N` 会写入 `1`
+- `outlet off --sock N` 会写入 `2`
 
-源码中的中文说明文字已经统一整理为正常 UTF-8 文本，便于在常见编辑器中直接查看。
+状态返回值：
+
+- `1`：关闭
+- `2`：开启
 
 ## 说明
 
-这份代码更偏向“设备联调示例”，不是完整的生产级封装。当前仍有这些特点：
+当前版本更偏向设备联调工具，仍有这些特点：
 
 - 社区字符串写死为 `public` 和 `private`
-- 示例中的设备 IP 写死
-- 没有做超时重试、异常分类和日志封装
-- `demo.py` 里是串行逐个插口执行，不是批量并发控制
-
-如果后面你要继续扩展，我建议下一步做：
-
-- 把设备 IP、community、OID 配置提出来
-- 增加超时和异常处理
-- 增加批量查询接口
-- 增加更明确的状态值定义
+- 默认设备 IP 写在代码里，但可以通过 `--ip` 临时覆盖
+- 全部插口信息查询是串行执行
+- 插口名称和电能的 OID 默认未配置
