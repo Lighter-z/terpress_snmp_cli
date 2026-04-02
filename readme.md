@@ -1,6 +1,16 @@
-# Python 3.13 PDU SNMP 命令行工具
+# TERPRESS DPDUv3L PDU SNMP 命令行工具
 
-这个目录提供了一个通过 SNMP 协议读取和控制 PDU 插口的命令行工具，适合在 Windows 或 Ubuntu 终端里直接查询插口信息、控制单个插口开关。
+一个通过 SNMP 协议读取和控制 PDU 插口的命令行工具，适合在 Windows 或 Ubuntu 终端里直接查询插口信息、控制单个插口开关。
+
+设备信息：
+
+- 厂家中文名：特普瑞斯
+- 厂家英文名：`TERPRESS`
+- 设备型号：`DPDUv3L`
+
+运行环境：
+
+- Python 版本：`Python 3.13`
 
 ## 文件作用
 
@@ -13,7 +23,7 @@
 - 提供设备名称、插口状态、电压、电流等读取方法
 - 提供插口开关控制方法
 
-### `demo.py`
+### `pdu_snmp_cli.py`
 
 命令行入口，负责：
 
@@ -36,7 +46,7 @@
 
 ## 文件关系
 
-`demo.py` 调用 `pdusnmp.py` 进行设备通信，同时调用 `pdu_oid_catalog.py` 提供完整 OID 目录查询能力。
+`pdu_snmp_cli.py` 调用 `pdusnmp.py` 进行设备通信，同时调用 `pdu_oid_catalog.py` 提供完整 OID 目录查询能力。
 
 ## 依赖安装
 
@@ -51,7 +61,7 @@ pip install -r requirements.txt
 
 ## 默认配置
 
-在 `demo.py` 顶部修改默认设备地址：
+在 `pdu_snmp_cli.py` 顶部修改默认设备地址：
 
 ```python
 DEVICE_IP = '192.168.0.166'
@@ -60,7 +70,7 @@ DEVICE_IP = '192.168.0.166'
 也可以执行时临时指定：
 
 ```bash
-python demo.py --ip 192.168.0.166 device-name
+python pdu_snmp_cli.py --ip 192.168.0.166 device-name
 ```
 
 ## 常用命令
@@ -68,79 +78,79 @@ python demo.py --ip 192.168.0.166 device-name
 查看帮助：
 
 ```bash
-python demo.py -h
+python pdu_snmp_cli.py -h
 ```
 
 读取设备型号：
 
 ```bash
-python demo.py device-name
+python pdu_snmp_cli.py device-name
 ```
 
 或者：
 
 ```bash
-python demo.py device name
+python pdu_snmp_cli.py device name
 ```
 
 读取设备实时数据：
 
 ```bash
-python demo.py device realtime
+python pdu_snmp_cli.py device realtime
 ```
 
 读取 1 号插口完整信息：
 
 ```bash
-python demo.py outlet info --sock 1
+python pdu_snmp_cli.py outlet info --sock 1
 ```
 
 读取全部插口简要信息：
 
 ```bash
-python demo.py outlet list
+python pdu_snmp_cli.py outlet list
 ```
 
 读取单个插口状态：
 
 ```bash
-python demo.py outlet status --sock 1
+python pdu_snmp_cli.py outlet status --sock 1
 ```
 
 读取单个插口电压：
 
 ```bash
-python demo.py outlet voltage --sock 1
+python pdu_snmp_cli.py outlet voltage --sock 1
 ```
 
 读取单个插口电流：
 
 ```bash
-python demo.py outlet current --sock 1
+python pdu_snmp_cli.py outlet current --sock 1
 ```
 
 打开 1 号插口：
 
 ```bash
-python demo.py outlet on --sock 1
+python pdu_snmp_cli.py outlet on --sock 1
 ```
 
 关闭 1 号插口：
 
 ```bash
-python demo.py outlet off --sock 1
+python pdu_snmp_cli.py outlet off --sock 1
 ```
 
 按关键字搜索 OID：
 
 ```bash
-python demo.py oid list --keyword 电流
+python pdu_snmp_cli.py oid list --keyword 电流
 ```
 
 查看某个 OID 的详细说明：
 
 ```bash
-python demo.py oid show --key outletControlCommand
+python pdu_snmp_cli.py oid show --key outletControlCommand
 ```
 
 在 Ubuntu 下执行时，把上面的 `python` 换成 `python3` 即可。
@@ -161,7 +171,7 @@ python demo.py oid show --key outletControlCommand
 - 频率
 - 碳排放量
 
-如果你的设备支持插口名称，并且你已经确认对应 OID，可以在 `demo.py` 的 `OID_KEYS` 里补充：
+如果你的设备支持插口名称，并且你已经确认对应 OID，可以在 `pdu_snmp_cli.py` 的 `OID_KEYS` 里补充：
 
 - `outlet_name`
 
@@ -170,13 +180,13 @@ python demo.py oid show --key outletControlCommand
 完整 OID 已经整理进代码，不需要再单独翻 Excel。可以直接使用：
 
 ```bash
-python demo.py oid list
+python pdu_snmp_cli.py oid list
 ```
 
 或按关键字搜索：
 
 ```bash
-python demo.py oid list --keyword 温度
+python pdu_snmp_cli.py oid list --keyword 温度
 ```
 
 当前插口控制和查询默认使用这些 OID：
